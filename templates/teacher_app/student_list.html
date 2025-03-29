@@ -1,0 +1,274 @@
+{% extends 'teacher_app/base.html' %}
+
+{% block title %}Danh sách sinh viên - Hệ thống Nhập Điểm{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'teacher_home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Danh sách sinh viên</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <!-- Search Section -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-search me-2"></i>Tìm kiếm sinh viên
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="student_id" class="form-label">Mã sinh viên</label>
+                        <input type="text" class="form-control" id="student_id" name="student_id" value="{{ request.GET.student_id|default:'' }}" placeholder="Nhập mã sinh viên">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="name" class="form-label">Tên sinh viên</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ request.GET.name|default:'' }}" placeholder="Nhập tên sinh viên">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="w-100 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Tìm kiếm
+                            </button>
+                            <a href="{% url 'teacher_student_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-redo me-2"></i>Đặt lại
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Student List -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-graduate me-2"></i>Danh sách sinh viên
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if students %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã sinh viên</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students %}
+                                    <tr>
+                                        <td class="fw-bold">{{ student.student_id }}</td>
+                                        <td>{{ student.name }}</td>
+                                        <td>{{ student.email }}</td>
+                                        <td>{{ student.created_at|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary view-scores" data-student-id="{{ student.id }}" data-student-name="{{ student.name }}">
+                                                <i class="fas fa-clipboard-list me-1"></i>Xem điểm
+                                            </button>
+                                            <a href="{% url 'add_score' %}?student={{ student.id }}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-plus-circle me-1"></i>Nhập điểm
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if students.has_other_pages %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if students.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ students.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for i in students.paginator.page_range %}
+                                    {% if students.number == i %}
+                                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                    {% else %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if students.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ students.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Không tìm thấy sinh viên nào.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Scores Modal -->
+<div class="modal fade" id="studentScoresModal" tabindex="-1" aria-labelledby="studentScoresModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="studentScoresModalLabel">
+                    <i class="fas fa-clipboard-list me-2"></i>Điểm của <span id="modal-student-name"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="studentScoresContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <a href="#" id="addScoreLink" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Nhập điểm mới
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý sự kiện khi nhấn nút "Xem điểm"
+        const viewScoresButtons = document.querySelectorAll('.view-scores');
+        const studentScoresModal = new bootstrap.Modal(document.getElementById('studentScoresModal'));
+        const modalStudentName = document.getElementById('modal-student-name');
+        const studentScoresContent = document.getElementById('studentScoresContent');
+        const addScoreLink = document.getElementById('addScoreLink');
+        
+        viewScoresButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const studentName = this.getAttribute('data-student-name');
+                
+                // Cập nhật tên sinh viên và link nhập điểm mới trong modal
+                modalStudentName.textContent = studentName;
+                addScoreLink.href = `{% url 'add_score' %}?student=${studentId}`;
+                
+                // Hiển thị modal
+                studentScoresModal.show();
+                
+                // Hiển thị spinner trong khi tải dữ liệu
+                studentScoresContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                `;
+                
+                // Gọi API để lấy điểm của sinh viên
+                fetch(`/api/student-scores/${studentId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.scores && data.scores.length > 0) {
+                            let tableHtml = `
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Môn học</th>
+                                                <th>Điểm</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thời gian nhập</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+                            
+                            data.scores.forEach(score => {
+                                let statusClass = 'bg-warning';
+                                if (score.status === 'approved') statusClass = 'bg-success';
+                                else if (score.status === 'rejected') statusClass = 'bg-danger';
+                                
+                                let scoreClass = 'bg-danger';
+                                if (score.score >= 8) scoreClass = 'bg-success';
+                                else if (score.score >= 6.5) scoreClass = 'bg-warning';
+                                
+                                tableHtml += `
+                                    <tr>
+                                        <td>${score.course_name}</td>
+                                        <td><span class="badge ${scoreClass}">${score.score}</span></td>
+                                        <td><span class="badge ${statusClass}">${score.status_display}</span></td>
+                                        <td>${score.timestamp}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            tableHtml += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                            
+                            studentScoresContent.innerHTML = tableHtml;
+                        } else {
+                            studentScoresContent.innerHTML = `
+                                <div class="text-center py-4">
+                                    <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Sinh viên này chưa có điểm nào.</p>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        studentScoresContent.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại sau.
+                            </div>
+                        `;
+                        console.error('Error fetching student scores:', error);
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %} 

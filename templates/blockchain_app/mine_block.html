@@ -1,0 +1,131 @@
+{% extends 'blockchain_app/base.html' %}
+
+{% block title %}Xác nhận điểm chính thức - Phòng Đào Tạo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-stamp me-2"></i>Xác nhận điểm chính thức
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Quy trình xác nhận sẽ chuyển tất cả điểm số đã được duyệt thành điểm chính thức và được bảo vệ bởi công nghệ blockchain. 
+                    <strong>Sau khi xác nhận, điểm số sẽ không thể thay đổi.</strong>
+                </p>
+                
+                {% if approved_transactions %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Có {{ approved_transactions.count }} điểm đã được duyệt và đang chờ xác nhận chính thức.
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-stamp me-2"></i>Xác nhận và phát hành điểm chính thức
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Không có điểm nào đang chờ xác nhận. Vui lòng duyệt điểm trước khi xác nhận chính thức.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-primary">
+                            <i class="fas fa-tasks me-2"></i>Đi đến trang duyệt điểm
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>Bảo mật thông tin
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Khi xác nhận, tất cả các điểm số đã được duyệt sẽ trở thành chính thức và được bảo vệ bởi công nghệ blockchain.</p>
+                
+                <div class="alert alert-warning">
+                    <h6 class="mb-2">Lưu ý quan trọng:</h6>
+                    <ul class="mb-0">
+                        <li>Sau khi xác nhận, điểm số sẽ <strong>không thể chỉnh sửa hoặc xóa</strong></li>
+                        <li>Quá trình xác nhận có thể mất vài giây</li>
+                        <li>Sinh viên sẽ thấy điểm ngay sau khi xác nhận</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6 class="mb-2">Tại sao phải xác nhận chính thức?</h6>
+                    <p class="mb-0">Quá trình xác nhận đảm bảo tính minh bạch và không thể thay đổi của điểm số, giúp bảo vệ quyền lợi của sinh viên và tạo niềm tin trong hệ thống quản lý điểm.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách điểm chờ xác nhận -->
+{% if approved_transactions %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Danh sách điểm chờ xác nhận chính thức
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sinh viên</th>
+                                <th>Môn học</th>
+                                <th>Điểm</th>
+                                <th>Người duyệt</th>
+                                <th>Thời gian duyệt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in approved_transactions %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold">{{ transaction.student.student_id }}</span>
+                                        <br>
+                                        <small class="text-muted">{{ transaction.student.name }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ transaction.course.code }}</span>
+                                        <br>
+                                        <small class="text-muted">{{ transaction.course.name }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if transaction.score >= 8 %}bg-success{% elif transaction.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ transaction.score }}
+                                        </span>
+                                    </td>
+                                    <td>{{ transaction.approved_by.username }}</td>
+                                    <td>{{ transaction.approval_time|date:"d/m/Y H:i:s" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

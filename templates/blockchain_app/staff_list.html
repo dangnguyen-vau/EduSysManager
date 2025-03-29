@@ -1,0 +1,69 @@
+{% extends 'blockchain_app/base.html' %}
+
+{% block title %}Quản lý nhân viên - Phòng Đào Tạo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-users-cog me-2"></i>Quản lý nhân viên</h4>
+            <a href="{% url 'register_staff' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Thêm nhân viên mới
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Danh sách nhân viên
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if staff %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Phòng ban</th>
+                                    <th>Vai trò</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in staff %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.get_full_name }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.department|default:"N/A" }}</td>
+                                        <td>
+                                            <span class="badge {{ user.user_type|lower }} {% if user.user_type == 'admin' %}bg-danger{% else %}bg-primary{% endif %}">
+                                                {{ user.get_user_type_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if user.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if user.is_active %}Hoạt động{% else %}Không hoạt động{% endif %}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Chưa có nhân viên nào được tạo.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

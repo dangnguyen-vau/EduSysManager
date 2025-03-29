@@ -1,0 +1,333 @@
+{% extends 'blockchain_app/base.html' %}
+
+{% block title %}Trang chủ - Phòng Đào Tạo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Overview Cards -->
+    <div class="col-md-12 mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-file-alt me-2"></i>Đợt phát hành điểm
+                        </h5>
+                        <h2 class="display-4">{{ total_blocks }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-graduation-cap me-2"></i>Tổng số điểm
+                        </h5>
+                        <h2 class="display-4">{{ total_transactions }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-clock me-2"></i>Điểm chờ duyệt
+                        </h5>
+                        <h2 class="display-4">{{ pending_transactions.count }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-shield-alt me-2"></i>Tính toàn vẹn
+                        </h5>
+                        <div class="d-flex align-items-center" style="height: 74px;">
+                            <a href="{% url 'verify_chain' %}" class="btn btn-light w-100">
+                                <i class="fas fa-check-double me-2"></i>Kiểm tra toàn vẹn
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="col-md-12 mb-4">
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="blockchain-tab" data-bs-toggle="tab" data-bs-target="#blockchain" type="button" role="tab">
+                    <i class="fas fa-history me-2"></i>Lịch sử phát hành điểm
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">
+                    <i class="fas fa-chart-bar me-2"></i>Thống kê
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="mainTabsContent">
+        <!-- Blockchain Tab -->
+        <div class="tab-pane fade show active" id="blockchain" role="tabpanel">
+            <div class="row">
+                <!-- Blockchain -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-alt me-2"></i>Lịch sử phát hành điểm
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if blocks %}
+                                <div class="blockchain-container">
+                                    {% for block in blocks %}
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <h5 class="card-title mb-0">Block #{{ block.index }}</h5>
+                                                    <small class="text-muted">{{ block.timestamp|date:"d/m/Y H:i:s" }}</small>
+                                                </div>
+                                                <hr>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p class="mb-1"><strong>Hash:</strong></p>
+                                                        <p class="text-muted" style="word-break: break-all;">{{ block.hash }}</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p class="mb-1"><strong>Previous Hash:</strong></p>
+                                                        <p class="text-muted" style="word-break: break-all;">{{ block.previous_hash }}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <p class="mb-1"><strong>Transactions:</strong> {{ block.transactions.count }}</p>
+                                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#blockModal{{ block.index }}">
+                                                        <i class="fas fa-info-circle me-1"></i>Chi tiết
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Block Detail Modal -->
+                                        <div class="modal fade" id="blockModal{{ block.index }}" tabindex="-1" aria-labelledby="blockModalLabel{{ block.index }}" aria-hidden="true">
+                                            <div class="modal-dialog modal-xl">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-primary text-white">
+                                                        <h5 class="modal-title" id="blockModalLabel{{ block.index }}">
+                                                            <i class="fas fa-file-alt me-2"></i>Chi tiết Block #{{ block.index }}
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <!-- Basic Info -->
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Index:</strong></p>
+                                                                    <p class="text-muted">{{ block.index }}</p>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Timestamp:</strong></p>
+                                                                    <p class="text-muted">{{ block.timestamp|date:'d/m/Y H:i:s' }}</p>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Nonce:</strong></p>
+                                                                    <p class="text-muted">{{ block.nonce }}</p>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Difficulty:</strong></p>
+                                                                    <p class="text-muted">{{ block.difficulty }}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Hash Info -->
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Hash:</strong></p>
+                                                                    <p class="text-muted" style="word-break: break-all;">{{ block.hash }}</p>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Previous Hash:</strong></p>
+                                                                    <p class="text-muted" style="word-break: break-all;">{{ block.previous_hash }}</p>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <p class="mb-1"><strong>Merkle Root:</strong></p>
+                                                                    <p class="text-muted" style="word-break: break-all;">{{ block.merkle_root }}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Transactions -->
+                                                            <div class="col-md-12 mt-4">
+                                                                <h5 class="mb-3">
+                                                                    <i class="fas fa-graduation-cap me-2"></i>Giao dịch trong Block
+                                                                </h5>
+                                                                {% if block.transactions.all %}
+                                                                    <div class="table-responsive">
+                                                                        <table class="table table-hover">
+                                                                            <thead class="table-light">
+                                                                                <tr>
+                                                                                    <th>ID</th>
+                                                                                    <th>Sinh viên</th>
+                                                                                    <th>Môn học</th>
+                                                                                    <th>Điểm</th>
+                                                                                    <th>Thời gian</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {% for tx in block.transactions.all %}
+                                                                                    <tr>
+                                                                                        <td>
+                                                                                            <small class="text-muted font-monospace">{{ tx.transaction_id }}</small>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <span class="fw-bold">{{ tx.student.student_id }}</span>
+                                                                                            <br>
+                                                                                            <small class="text-muted">{{ tx.student.name }}</small>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <span class="fw-bold">{{ tx.course.code }}</span>
+                                                                                            <br>
+                                                                                            <small class="text-muted">{{ tx.course.name }}</small>
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <span class="badge {% if tx.score >= 8 %}bg-success{% elif tx.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                                                                {{ tx.score }}
+                                                                                            </span>
+                                                                                        </td>
+                                                                                        <td>{{ tx.timestamp|date:"d/m/Y H:i:s" }}</td>
+                                                                                    </tr>
+                                                                                {% endfor %}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                {% else %}
+                                                                    <div class="text-center py-4">
+                                                                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                                                                        <p class="text-muted">Không có giao dịch nào trong block này.</p>
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-center">Chưa có block nào trong blockchain.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Transactions -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clock me-2"></i>Điểm chờ duyệt
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if pending_transactions %}
+                                <div class="list-group">
+                                    {% for transaction in pending_transactions %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ transaction.student.student_id }}</h6>
+                                                <small class="text-muted">{{ transaction.timestamp|date:"H:i:s" }}</small>
+                                            </div>
+                                            <p class="mb-1">{{ transaction.course.name }}: {{ transaction.score }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-3">
+                                    <a href="{% url 'transaction_list' %}" class="btn btn-primary">
+                                        <i class="fas fa-check-circle me-1"></i>Duyệt điểm
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="text-center">Không có giao dịch chờ xử lý.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div class="tab-pane fade" id="statistics" role="tabpanel">
+            <div class="row">
+                <!-- Điểm trung bình -->
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Điểm trung bình
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center">
+                                <h1 class="display-1">{{ average_score|floatformat:2 }}</h1>
+                                <p class="text-muted">Điểm trung bình toàn bộ giao dịch</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Latest Blocks -->
+                <div class="col-md-12 mt-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>Đợt phát hành điểm gần đây 
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Index</th>
+                                            <th>Hash</th>
+                                            <th>Transactions</th>
+                                            <th>Difficulty</th>
+                                            <th>Time</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for block in latest_blocks %}
+                                            <tr>
+                                                <td>{{ block.index }}</td>
+                                                <td><code>{{ block.hash|truncatechars:20 }}</code></td>
+                                                <td>{{ block.transactions.count }}</td>
+                                                <td>{{ block.difficulty }}</td>
+                                                <td>{{ block.timestamp|date:"d/m/Y H:i:s" }}</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#blockModal{{ block.index }}">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,125 @@
+{% extends 'blockchain_app/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Danh sách môn học - Blockchain Score{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Danh sách môn học</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Course List -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-book me-2"></i>Danh sách môn học
+                </h5>
+                <a href="{% url 'add_course' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Thêm môn học
+                </a>
+            </div>
+            <div class="card-body">
+                {% if courses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mã môn</th>
+                                    <th>Tên môn học</th>
+                                    <th>Số tín chỉ</th>
+                                    <th>Số giao dịch</th>
+                                    <th>Điểm TB</th>
+                                    <th>Ngày tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                    <tr>
+                                        <td>{{ course.code }}</td>
+                                        <td>{{ course.name }}</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ course.credits }} TC
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">
+                                                {{ course.transaction_count }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if course.average_score %}
+                                                <span class="badge {% if course.average_score >= 8 %}bg-success{% elif course.average_score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ course.average_score|floatformat:2 }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ course.created_at|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Chưa có môn học nào trong hệ thống.</p>
+                        <a href="{% url 'add_course' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Thêm môn học mới
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    {% if courses %}
+        <div class="col-md-12 mt-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Tổng số môn học</h6>
+                            <h2 class="mb-0">{{ courses|length }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Tổng số giao dịch</h6>
+                            <h2 class="mb-0">{{ courses|sum_attr:'transaction_count' }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Điểm trung bình</h6>
+                            <h2 class="mb-0">
+                                {% with avg_score=courses|average_attr:'average_score' %}
+                                    {% if avg_score %}
+                                        {{ avg_score|floatformat:2 }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                {% endwith %}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

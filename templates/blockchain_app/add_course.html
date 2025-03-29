@@ -1,0 +1,102 @@
+{% extends 'blockchain_app/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Thêm môn học mới - Blockchain Score{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Danh sách môn học</a></li>
+                <li class="breadcrumb-item active">Thêm môn học mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Add Course Form -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-book-medical me-2"></i>Thêm môn học mới
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Lưu môn học
+                        </button>
+                        <a href="{% url 'course_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Hướng dẫn
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6>Mã môn học:</h6>
+                <ul>
+                    <li>Phải là duy nhất trong hệ thống</li>
+                    <li>Chỉ chứa chữ và số</li>
+                    <li>Tối đa 20 ký tự</li>
+                    <li>Ví dụ: CS101, MATH202, ...</li>
+                </ul>
+
+                <h6>Tên môn học:</h6>
+                <ul>
+                    <li>Tên đầy đủ của môn học</li>
+                    <li>Tối đa 100 ký tự</li>
+                </ul>
+
+                <h6>Số tín chỉ:</h6>
+                <ul>
+                    <li>Số tín chỉ của môn học</li>
+                    <li>Phải là số nguyên dương</li>
+                </ul>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Sau khi thêm môn học, bạn có thể thêm điểm cho môn học này trong phần "Thêm điểm".
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-link me-2"></i>Liên kết nhanh
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{% url 'add_student' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-plus me-2"></i>Thêm sinh viên mới
+                    </a>
+                    <a href="{% url 'course_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-list me-2"></i>Xem danh sách môn học
+                    </a>
+                    <a href="{% url 'transaction_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tasks me-2"></i>Duyệt điểm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,212 @@
+{% extends 'teacher_app/base.html' %}
+
+{% block title %}Trang chủ - Hệ thống Nhập Điểm{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Overview Cards -->
+    <div class="col-md-12 mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-graduation-cap me-2"></i>Tổng số điểm đã nhập
+                        </h5>
+                        <h2 class="display-4">{{ total_scores }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-clock me-2"></i>Điểm chờ duyệt
+                        </h5>
+                        <h2 class="display-4">{{ pending_scores }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-check-circle me-2"></i>Điểm đã duyệt
+                        </h5>
+                        <h2 class="display-4">{{ approved_scores }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Thao tác nhanh
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'add_score' %}" class="btn btn-primary w-100 py-3">
+                            <i class="fas fa-plus-circle fa-2x mb-2 d-block mx-auto"></i>
+                            Nhập điểm mới
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'score_history' %}" class="btn btn-outline-success w-100 py-3">
+                            <i class="fas fa-history fa-2x mb-2 d-block mx-auto"></i>
+                            Lịch sử nhập điểm
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'teacher_student_list' %}" class="btn btn-outline-info w-100 py-3">
+                            <i class="fas fa-user-graduate fa-2x mb-2 d-block mx-auto"></i>
+                            Danh sách sinh viên
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Scores -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Điểm đã nhập gần đây
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_scores %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã SV</th>
+                                        <th>Tên sinh viên</th>
+                                        <th>Môn học</th>
+                                        <th>Điểm</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thời gian</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for score in recent_scores %}
+                                        <tr>
+                                            <td>{{ score.student.student_id }}</td>
+                                            <td>{{ score.student.name }}</td>
+                                            <td>{{ score.course.name }}</td>
+                                            <td>
+                                                <span class="badge {% if score.score >= 8 %}bg-success{% elif score.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ score.score }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge {% if score.status == 'pending' %}bg-warning{% elif score.status == 'approved' %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ score.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ score.timestamp|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Chưa có điểm nào được nhập.</p>
+                            <a href="{% url 'add_score' %}" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i>Nhập điểm mới
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Tổng quan tình trạng
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Helpful Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Lưu ý 
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Điểm sau khi nhập sẽ được chuyển lên phòng đào tạo để duyệt
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            Điểm sau khi được xác nhận chính thức sẽ không thể thay đổi
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Điểm đã duyệt sẽ được bảo vệ bởi công nghệ blockchain
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Biểu đồ tổng quan tình trạng
+        var ctx = document.getElementById('statusChart').getContext('2d');
+        var statusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Chờ duyệt', 'Đã duyệt', 'Đã từ chối'],
+                datasets: [{
+                    data: [{{ pending_scores }}, {{ approved_scores }}, {{ rejected_scores }}],
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(40, 167, 69, 0.8)',
+                        'rgba(220, 53, 69, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

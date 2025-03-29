@@ -1,0 +1,202 @@
+{% extends 'blockchain_app/base.html' %}
+
+{% block title %}Duyệt nhập điểm - Phòng Đào Tạo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle me-2"></i>Duyệt nhập điểm
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="mb-2">Thông tin sinh viên</h6>
+                        <p class="mb-1"><strong>Mã SV:</strong> {{ transaction.student.student_id }}</p>
+                        <p class="mb-1"><strong>Họ tên:</strong> {{ transaction.student.name }}</p>
+                        <p class="mb-1"><strong>Email:</strong> {{ transaction.student.email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-2">Thông tin môn học</h6>
+                        <p class="mb-1"><strong>Mã môn:</strong> {{ transaction.course.code }}</p>
+                        <p class="mb-1"><strong>Tên môn:</strong> {{ transaction.course.name }}</p>
+                        <p class="mb-1"><strong>Số tín chỉ:</strong> {{ transaction.course.credits }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <h6 class="mb-2">Thông tin điểm số</h6>
+                            <p class="mb-1"><strong>Điểm số:</strong> <span class="badge {% if transaction.score >= 8 %}bg-success{% elif transaction.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size: 1rem;">{{ transaction.score }}</span></p>
+                            <p class="mb-1"><strong>Thời gian ghi nhận:</strong> {{ transaction.timestamp|date:"d/m/Y H:i:s" }}</p>
+                            <p class="mb-1"><strong>Người nhập điểm:</strong> 
+                                {% if transaction.created_by %}
+                                    <span class="badge bg-info">{{ transaction.created_by.username }}</span>
+                                {% else %}
+                                    <span class="text-muted">Không xác định</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-0"><strong>Trạng thái:</strong> {{ transaction.get_status_display }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Tiến trình đồng thuận</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if is_admin %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-crown me-2"></i> Bạn đang đăng nhập với tư cách Admin. Bạn có thể phê duyệt trực tiếp mà không cần đồng thuận từ các nhân viên.
+                        </div>
+                        {% else %}
+                            <!-- Hiển thị thông báo đã duyệt nếu người dùng đã duyệt -->
+                            {% if user_has_approved %}
+                            <div class="alert alert-success mb-3">
+                                <i class="fas fa-check-circle me-2"></i> <strong>Bạn đã tham gia phê duyệt điểm số này!</strong>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Hiển thị thời gian còn lại -->
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-clock me-2"></i> 
+                                {% if time_remaining %}
+                                    <strong>Thời gian còn lại:</strong> {{ time_remaining }} (hạn chót: {{ deadline|date:"d/m/Y H:i" }})
+                                {% else %}
+                                    <strong>Cảnh báo:</strong> Giao dịch này sắp hết hạn phê duyệt!
+                                {% endif %}
+                            </div>
+                            
+                            <div class="progress mb-3">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: 0%;" 
+                                     id="consensus-progress-bar"
+                                     aria-valuenow="{{ approval_count }}" aria-valuemin="0" aria-valuemax="{{ total_staff }}">
+                                    {{ approval_count }}/{{ total_staff }}
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden inputs to store values for JavaScript -->
+                            <input type="hidden" id="approval-count" value="{{ approval_count }}">
+                            <input type="hidden" id="total-staff" value="{{ total_staff }}">
+                            <input type="hidden" id="consensus-threshold" value="{{ consensus_threshold }}">
+                            
+                            <h5>Đã phê duyệt ({{ approval_count }}/{{ total_staff }})</h5>
+                            <ul class="list-group mb-3">
+                                {% for staff in approving_staff %}
+                                <li class="list-group-item">
+                                    {{ staff.get_full_name|default:staff.username }}
+                                    {% if staff == user %}
+                                    <span class="badge bg-primary">Bạn</span>
+                                    {% endif %}
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item">Chưa có nhân viên nào phê duyệt</li>
+                                {% endfor %}
+                            </ul>
+                            
+                            <h5>Chưa phê duyệt ({{ remaining_staff.count }})</h5>
+                            <ul class="list-group">
+                                {% for staff in remaining_staff %}
+                                <li class="list-group-item">{{ staff.get_full_name|default:staff.username }}</li>
+                                {% empty %}
+                                <li class="list-group-item">Tất cả nhân viên đã phê duyệt</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if is_admin %}
+                        <p class="mb-0">Với quyền Admin, bạn có thể phê duyệt ngay lập tức</p>
+                        {% else %}
+                        <p class="mb-0">Cần ít nhất {{ consensus_threshold }} nhân viên phê duyệt (51%) để đạt đồng thuận. Nếu không đạt đồng thuận trong 3 ngày, giao dịch sẽ tự động bị hủy.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Quyết định</label>
+                        {{ form.status }}
+                        <div class="form-text small text-danger">
+                            <strong>Lưu ý:</strong> Nếu bạn từ chối điểm số này, quyết định sẽ được áp dụng ngay lập tức không cần đồng thuận.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 rejection-reason-group" style="display: none;">
+                        <label for="{{ form.rejection_reason.id_for_label }}" class="form-label">Lý do từ chối</label>
+                        {{ form.rejection_reason }}
+                        <div class="form-text">Vui lòng nêu rõ lý do từ chối để giảng viên có thể hiểu và sửa đổi.</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                        </a>
+                        
+                        {% if user_has_approved and not is_admin %}
+                            <button type="submit" class="btn btn-success" disabled>
+                                <i class="fas fa-check-double me-2"></i>Bạn đã duyệt
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Lưu quyết định
+                            </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Hiển thị/ẩn trường lý do từ chối tùy theo lựa chọn
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+        const rejectionGroup = document.querySelector('.rejection-reason-group');
+        
+        function toggleRejectionReason() {
+            if (statusSelect.value === 'rejected') {
+                rejectionGroup.style.display = 'block';
+            } else {
+                rejectionGroup.style.display = 'none';
+            }
+        }
+        
+        toggleRejectionReason(); // Gọi khi trang được tải
+        statusSelect.addEventListener('change', toggleRejectionReason);
+        
+        // ===== THÊM CODE MỚI: Cập nhật thanh tiến trình =====
+        // Lấy các giá trị từ hidden inputs
+        const approvalCount = parseInt(document.getElementById('approval-count').value) || 0;
+        const totalStaff = parseInt(document.getElementById('total-staff').value) || 1;
+        const consensusThreshold = parseInt(document.getElementById('consensus-threshold').value) || 1;
+        
+        // Tính phần trăm
+        const percentage = Math.round((approvalCount / totalStaff) * 100);
+        
+        // Cập nhật thanh tiến trình
+        const progressBar = document.getElementById('consensus-progress-bar');
+        progressBar.style.width = percentage + '%';
+        progressBar.setAttribute('aria-valuenow', approvalCount);
+        
+        // Đổi màu dựa trên mức độ đồng thuận
+        if (approvalCount >= consensusThreshold) {
+            progressBar.classList.add('bg-success');
+        } else if (approvalCount > 0) {
+            progressBar.classList.add('bg-warning');
+        } else {
+            progressBar.classList.add('bg-danger');
+        }
+    });
+</script>
+{% endblock %}

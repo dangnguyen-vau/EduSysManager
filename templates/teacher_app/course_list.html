@@ -1,0 +1,301 @@
+{% extends 'teacher_app/base.html' %}
+
+{% block title %}Danh sách môn học - Hệ thống Nhập Điểm{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'teacher_home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Danh sách môn học</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <!-- Search Section -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-search me-2"></i>Tìm kiếm môn học
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="code" class="form-label">Mã môn học</label>
+                        <input type="text" class="form-control" id="code" name="code" value="{{ request.GET.code|default:'' }}" placeholder="Nhập mã môn học">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="name" class="form-label">Tên môn học</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ request.GET.name|default:'' }}" placeholder="Nhập tên môn học">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="w-100 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Tìm kiếm
+                            </button>
+                            <a href="{% url 'teacher_course_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-redo me-2"></i>Đặt lại
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Course List -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-book me-2"></i>Danh sách môn học
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if courses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã môn học</th>
+                                    <th>Tên môn học</th>
+                                    <th>Số tín chỉ</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                    <tr>
+                                        <td class="fw-bold">{{ course.code }}</td>
+                                        <td>{{ course.name }}</td>
+                                        <td>{{ course.credits }}</td>
+                                        <td>{{ course.created_at|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary view-course-scores" data-course-id="{{ course.id }}" data-course-name="{{ course.name }}">
+                                                <i class="fas fa-chart-bar me-1"></i>Thống kê điểm
+                                            </button>
+                                            <a href="{% url 'add_score' %}?course={{ course.id }}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-plus-circle me-1"></i>Nhập điểm
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if courses.has_other_pages %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if courses.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ courses.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for i in courses.paginator.page_range %}
+                                    {% if courses.number == i %}
+                                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                    {% else %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if courses.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ courses.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Không tìm thấy môn học nào.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Scores Modal -->
+<div class="modal fade" id="courseScoresModal" tabindex="-1" aria-labelledby="courseScoresModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="courseScoresModalLabel">
+                    <i class="fas fa-chart-bar me-2"></i>Thống kê điểm môn <span id="modal-course-name"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="courseScoresContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <a href="#" id="addCourseScoreLink" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Nhập điểm mới
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý sự kiện khi nhấn nút "Thống kê điểm"
+        const viewCourseScoresButtons = document.querySelectorAll('.view-course-scores');
+        const courseScoresModal = new bootstrap.Modal(document.getElementById('courseScoresModal'));
+        const modalCourseName = document.getElementById('modal-course-name');
+        const courseScoresContent = document.getElementById('courseScoresContent');
+        const addCourseScoreLink = document.getElementById('addCourseScoreLink');
+        
+        viewCourseScoresButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const courseId = this.getAttribute('data-course-id');
+                const courseName = this.getAttribute('data-course-name');
+                
+                // Cập nhật tên môn học và link nhập điểm mới trong modal
+                modalCourseName.textContent = courseName;
+                addCourseScoreLink.href = `{% url 'add_score' %}?course=${courseId}`;
+                
+                // Hiển thị modal
+                courseScoresModal.show();
+                
+                // Hiển thị spinner trong khi tải dữ liệu
+                courseScoresContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                `;
+                
+                // Gọi API để lấy thống kê điểm của môn học
+                fetch(`/api/course-scores/${courseId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.scores && data.scores.length > 0) {
+                            let tableHtml = `
+                                <div class="card mb-4">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">Thông tin thống kê</h6>
+                                        <div class="row">
+                                            <div class="col-md-3 text-center mb-3">
+                                                <div class="h5 mb-0 font-weight-bold text-primary">${data.total_scores}</div>
+                                                <div class="small text-muted">Tổng số điểm</div>
+                                            </div>
+                                            <div class="col-md-3 text-center mb-3">
+                                                <div class="h5 mb-0 font-weight-bold text-success">${data.average_score.toFixed(2)}</div>
+                                                <div class="small text-muted">Điểm trung bình</div>
+                                            </div>
+                                            <div class="col-md-3 text-center mb-3">
+                                                <div class="h5 mb-0 font-weight-bold text-info">${data.max_score}</div>
+                                                <div class="small text-muted">Điểm cao nhất</div>
+                                            </div>
+                                            <div class="col-md-3 text-center mb-3">
+                                                <div class="h5 mb-0 font-weight-bold text-warning">${data.min_score}</div>
+                                                <div class="small text-muted">Điểm thấp nhất</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h6 class="mb-3">Danh sách điểm số</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã SV</th>
+                                                <th>Tên sinh viên</th>
+                                                <th>Điểm</th>
+                                                <th>Trạng thái</th>
+                                                <th>Thời gian nhập</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+                            
+                            data.scores.forEach(score => {
+                                let statusClass = 'bg-warning';
+                                if (score.status === 'approved') statusClass = 'bg-success';
+                                else if (score.status === 'rejected') statusClass = 'bg-danger';
+                                
+                                let scoreClass = 'bg-danger';
+                                if (score.score >= 8) scoreClass = 'bg-success';
+                                else if (score.score >= 6.5) scoreClass = 'bg-warning';
+                                
+                                tableHtml += `
+                                    <tr>
+                                        <td>${score.student_id}</td>
+                                        <td>${score.student_name}</td>
+                                        <td><span class="badge ${scoreClass}">${score.score}</span></td>
+                                        <td><span class="badge ${statusClass}">${score.status_display}</span></td>
+                                        <td>${score.timestamp}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            tableHtml += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                            
+                            courseScoresContent.innerHTML = tableHtml;
+                        } else {
+                            courseScoresContent.innerHTML = `
+                                <div class="text-center py-4">
+                                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Môn học này chưa có điểm nào.</p>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        courseScoresContent.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại sau.
+                            </div>
+                        `;
+                        console.error('Error fetching course scores:', error);
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %} 

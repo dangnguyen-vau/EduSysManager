@@ -1,0 +1,110 @@
+{% extends 'teacher_app/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Nhập điểm mới - Hệ thống Nhập Điểm{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'teacher_home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Nhập điểm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Add Score Form -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Nhập điểm mới
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.student|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.course|as_crispy_field }}
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            {{ form.score|as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Lưu điểm
+                        </button>
+                        <a href="{% url 'teacher_home' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Hướng dẫn nhập điểm
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6 class="mb-2">Quy trình nhập điểm và duyệt:</h6>
+                    <ol class="mb-0">
+                        <li>Giảng viên nhập điểm cho sinh viên</li>
+                        <li>Điểm sẽ được gửi lên phòng đào tạo để duyệt</li>
+                        <li>Phòng đào tạo duyệt và xác nhận điểm</li>
+                        <li>Điểm được đưa vào blockchain và công bố</li>
+                    </ol>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <h6 class="mb-2">Lưu ý:</h6>
+                    <ul class="mb-0">
+                        <li>Thang điểm từ 0-10 (có thể nhập số thập phân)</li>
+                        <li>Sau khi được xác nhận chính thức, điểm sẽ không thể thay đổi</li>
+                        <li>Nếu cần sửa điểm, hãy liên hệ phòng đào tạo trước khi điểm được xác nhận</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Scores -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>Điểm vừa nhập
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_pending_scores %}
+                    <div class="list-group">
+                        {% for score in recent_pending_scores %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ score.student.student_id }}</h6>
+                                    <small class="text-muted">{{ score.timestamp|date:"H:i:s" }}</small>
+                                </div>
+                                <p class="mb-1">{{ score.course.name }}: <span class="badge {% if score.score >= 8 %}bg-success{% elif score.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">{{ score.score }}</span></p>
+                                <small class="text-muted">Trạng thái: {{ score.get_status_display }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">Chưa có điểm nào vừa được nhập.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

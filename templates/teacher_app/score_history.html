@@ -1,0 +1,198 @@
+{% extends 'teacher_app/base.html' %}
+
+{% block title %}Lịch sử nhập điểm - Hệ thống Nhập Điểm{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'teacher_home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Lịch sử nhập điểm</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Bộ lọc
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="student" class="form-label">Sinh viên</label>
+                        <select name="student" id="student" class="form-select">
+                            <option value="">Tất cả sinh viên</option>
+                            {% for student in students %}
+                                <option value="{{ student.id }}" {% if request.GET.student == student.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ student.student_id }} - {{ student.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="course" class="form-label">Môn học</label>
+                        <select name="course" id="course" class="form-select">
+                            <option value="">Tất cả môn học</option>
+                            {% for course in courses %}
+                                <option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ course.code }} - {{ course.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Trạng thái</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Chờ duyệt</option>
+                            <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Đã duyệt</option>
+                            <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Từ chối</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="mined" class="form-label">Xác nhận chính thức</label>
+                        <select name="mined" id="mined" class="form-select">
+                            <option value="">Tất cả</option>
+                            <option value="yes" {% if request.GET.mined == 'yes' %}selected{% endif %}>Đã xác nhận</option>
+                            <option value="no" {% if request.GET.mined == 'no' %}selected{% endif %}>Chưa xác nhận</option>
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Tìm kiếm
+                        </button>
+                        <a href="{% url 'score_history' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo me-2"></i>Đặt lại
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score History Table -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Lịch sử nhập điểm
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if scores %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã SV</th>
+                                    <th>Tên sinh viên</th>
+                                    <th>Môn học</th>
+                                    <th>Điểm</th>
+                                    <th>Trạng thái</th>
+                                    <th>Xác nhận chính thức</th>
+                                    <th>Thời gian nhập</th>
+                                    <th>Thời gian duyệt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for score in scores %}
+                                    <tr>
+                                        <td>{{ score.student.student_id }}</td>
+                                        <td>{{ score.student.name }}</td>
+                                        <td>{{ score.course.name }}</td>
+                                        <td>
+                                            <span class="badge {% if score.score >= 8 %}bg-success{% elif score.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ score.score }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if score.status == 'pending' %}bg-warning{% elif score.status == 'approved' %}bg-success{% elif score.status == 'rejected' %}bg-danger{% endif %}">
+                                                {{ score.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if score.is_mined %}
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-check-circle me-1"></i>Đã xác nhận
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-clock me-1"></i>Chưa xác nhận
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ score.timestamp|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if score.approval_time %}
+                                                {{ score.approval_time|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if scores.has_other_pages %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if scores.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ scores.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for i in scores.paginator.page_range %}
+                                    {% if scores.number == i %}
+                                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                    {% else %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if scores.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ scores.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Không tìm thấy kết quả phù hợp với điều kiện tìm kiếm.</p>
+                        <a href="{% url 'add_score' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Nhập điểm mới
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
