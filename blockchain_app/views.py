@@ -131,52 +131,114 @@ def approve_transaction(request, transaction_id):
     consensus_threshold = math.ceil(total_staff * 0.51)  # Làm tròn lên để đảm bảo đa số
     
     if request.method == 'POST':
-        form = TransactionApprovalForm(request.POST, instance=transaction)
+        # THAY ĐỔI: KHÔNG sử dụng instance=transaction để không tự động cập nhật
+        form = TransactionApprovalForm(request.POST)
         if form.is_valid():
             # Lấy dữ liệu từ form
             new_status = form.cleaned_data.get('status')
-            
-            # Lấy private key từ form (nếu có)
             private_key = form.cleaned_data.get('private_key')
+            rejection_reason = form.cleaned_data.get('rejection_reason')
             
-            # Xử lý từ chối điểm
+            # Kiểm tra nếu trạng thái là "pending" (không thay đổi), không làm gì cả
+            if new_status == 'pending':
+                messages.info(request, "Không có thay đổi nào được thực hiện. Giao dịch vẫn đang chờ duyệt.")
+                return redirect('transaction_list')
+            
+            # Kiểm tra xem người dùng có khóa công khai không - thêm điều kiện debug
+            if not request.user.public_key and not is_admin(request.user):
+                messages.error(request, f"Người dùng {request.user.username} chưa thiết lập cặp khóa. Vui lòng thiết lập khóa trước khi duyệt điểm.")
+                return redirect('manage_keys')
+            
+            # Thêm log để debug
+            if not is_admin(request.user):
+                print(f"User: {request.user.username}, Has public key: {bool(request.user.public_key)}")
+            
+            # Xử lý từ chối điểm - KHÔNG sử dụng form.save()
             if new_status == 'rejected':
-                tx = form.save(commit=False)
-                tx.rejected_by = request.user
-                tx.rejection_time = timezone.now()
-                tx.status = 'rejected'
-                tx.save()
-                
-                # Ký giao dịch từ chối nếu có private key
-                if private_key:
-                    try:
-                        tx.sign_transaction(private_key, 'approver')
-                    except Exception as e:
-                        messages.warning(request, f"Đã từ chối điểm nhưng có lỗi khi ký: {str(e)}")
-                
-                tx = form.save(commit=False)
-                tx.approved_by = request.user
-                tx.approval_time = timezone.now()
-                tx.status = 'approved'
-                tx.save()
+                try:
+                    # Cập nhật trạng thái trực tiếp, không qua form.save()
+                    transaction.status = 'rejected'
+                    transaction.rejected_by = request.user
+                    transaction.rejection_time = timezone.now()
+                    transaction.rejection_reason = rejection_reason
+                    transaction.save()
+                    
+                    # Ký giao dịch từ chối với vai trò approver
+                    if not is_admin(request.user):  # Admin không cần ký
+                        try:
+                            transaction.sign_transaction(private_key, 'approver', user=request.user)
+                        except ValueError as e:
+                            # Nếu ký thất bại, hoàn tác thay đổi
+                            transaction.status = 'pending'
+                            transaction.rejected_by = None
+                            transaction.rejection_time = None
+                            transaction.rejection_reason = None
+                            transaction.save()
+                            messages.error(request, f"Lỗi khi ký số: {str(e)}")
+                            return redirect('approve_transaction', transaction_id=transaction_id)
+                    
+                    messages.warning(request, f'Bạn đã từ chối điểm số này với lý do: {transaction.rejection_reason}')
+                    return redirect('transaction_list')
+                except Exception as e:
+                    messages.error(request, f"Lỗi khi từ chối điểm: {str(e)}")
+                    return redirect('approve_transaction', transaction_id=transaction_id)
+            
+            # Admin có thể duyệt trực tiếp mà không cần đồng thuận
+            if is_admin(request.user) and new_status == 'approved':
+                transaction.status = 'approved'  # Cập nhật trực tiếp
+                transaction.approved_by = request.user
+                transaction.approval_time = timezone.now()
+                transaction.save()
                 messages.success(request, 'Với quyền admin, bạn đã phê duyệt trực tiếp điểm số này!')
                 return redirect('transaction_list')
+            
+            # Xử lý phê duyệt (chỉ khi trạng thái là approved)
+            if new_status == 'approved' and not is_admin(request.user):
+                try:
+                    # Thêm nhân viên vào danh sách người phê duyệt nếu chưa có
+                    if request.user not in transaction.approving_staff.all():
+                        transaction.approving_staff.add(request.user)
+                    
+                    # Ký giao dịch phê duyệt
+                    transaction.sign_transaction(private_key, 'approver', user=request.user)
+                    
+                    # Kiểm tra xem đã đạt đồng thuận chưa (chỉ tính staff)
+                    approval_count = transaction.approving_staff.filter(user_type='staff').count()
+                    
+                    # CẢI TIẾN: Hiển thị bao nhiêu phê duyệt còn thiếu
+                    remaining = consensus_threshold - approval_count
+                    
+                    if approval_count >= consensus_threshold:
+                        # CHỈ KHI đạt đồng thuận, mới cập nhật trạng thái thành 'approved'
+                        transaction.status = 'approved'
+                        transaction.approved_by = request.user
+                        transaction.approval_time = timezone.now()
+                        transaction.save()
+                        messages.success(request, f'Đạt đồng thuận! {approval_count}/{total_staff} nhân viên đã phê duyệt (>51%). Điểm số được xác nhận!')
+                    else:
+                        # QUAN TRỌNG: KHÔNG cập nhật trạng thái - vẫn giữ là 'pending'
+                        messages.info(request, f'Đã ghi nhận phê duyệt của bạn. Hiện tại: {approval_count}/{total_staff} phê duyệt (còn thiếu {remaining}). Cần ít nhất {consensus_threshold} phê duyệt.')
                 
-            # Kiểm tra xem đã đạt đồng thuận chưa (chỉ tính staff)
-            approval_count = transaction.approving_staff.filter(user_type='staff').count()
-            if approval_count >= consensus_threshold:
-                tx = form.save(commit=False)
-                tx.approved_by = request.user  # Người hoàn tất quá trình phê duyệt
-                tx.approval_time = timezone.now()
-                tx.status = 'approved'
-                tx.save()
-                messages.success(request, f'Đạt đồng thuận! {approval_count}/{total_staff} nhân viên đã phê duyệt (>51%). Điểm số được xác nhận!')
-            else:
-                messages.info(request, f'Đã ghi nhận phê duyệt của bạn. Hiện tại: {approval_count}/{total_staff} phê duyệt (cần ít nhất {consensus_threshold}).')
+                except ValueError as e:
+                    # Nếu ký thất bại, hoàn tác thay đổi
+                    transaction.approving_staff.remove(request.user)
+                    transaction.save()
+                    messages.error(request, f"Lỗi khi ký số: {str(e)}")
+                    return redirect('approve_transaction', transaction_id=transaction_id)
+                except Exception as e:
+                    transaction.approving_staff.remove(request.user)
+                    transaction.save()
+                    messages.error(request, f"Lỗi không xác định: {str(e)}")
+                    return redirect('approve_transaction', transaction_id=transaction_id)
             
             return redirect('transaction_list')
     else:
-        form = TransactionApprovalForm(instance=transaction)
+        # Không sử dụng instance=transaction để tránh tự động điền trạng thái hiện tại
+        form = TransactionApprovalForm()
+        # Thiết lập giá trị mặc định cho các trường
+        form.fields['status'].initial = transaction.status
+        if transaction.rejection_reason:
+            form.fields['rejection_reason'].initial = transaction.rejection_reason
     
     # Hiển thị thông tin về staff đã phê duyệt (chỉ hiển thị staff, không hiển thị admin)
     approving_staff = transaction.approving_staff.filter(user_type='staff')
@@ -253,7 +315,7 @@ def mine_block(request):
         # Mark transactions as mined
         approved_transactions.update(is_mined=True)
         
-        messages.success(request, f'Đã xác nhận thành công {approved_transactions.count()} điểm. Điểm số đã được lưu trữ an toàn và không thể thay đổi.')
+        messages.success(request, 'Đã xác nhận thành công. Điểm số đã được lưu trữ an toàn và không thể thay đổi.')
         return redirect('home')
     
     context = {
@@ -391,3 +453,14 @@ def manage_keys(request):
         'has_keys': bool(request.user.public_key)
     }
     return render(request, 'blockchain_app/manage_keys.html', context)
+
+@login_required
+@user_passes_test(is_pdt_staff, login_url='login')
+def blockchain_history(request):
+    """Hiển thị lịch sử các khối trong blockchain"""
+    blocks = Block.objects.all().order_by('-index')
+    
+    context = {
+        'blocks': blocks,
+    }
+    return render(request, 'blockchain_app/blockchain_history.html', context)

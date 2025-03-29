@@ -12,6 +12,7 @@ urlpatterns = [
     path('score-history/', views.score_history, name='score_history'),
     path('students/', views.teacher_student_list, name='teacher_student_list'),
     path('courses/', views.teacher_course_list, name='teacher_course_list'),
+    path('keys/', views.manage_keys, name='teacher_manage_keys'),
     
     # API endpoints
     path('api/student-scores/<int:student_id>/', views.api_student_scores, name='api_student_scores'),

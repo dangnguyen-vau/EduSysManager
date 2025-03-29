@@ -1,326 +1,31 @@
 {% extends 'blockchain_app/base.html' %}
 
-{% block title %}Trang chủ - Phòng Đào Tạo{% endblock %}
+{% block title %}Hệ thống Quản lý Điểm số - Phòng Đào Tạo{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- Overview Cards -->
-    <div class="col-md-12 mb-4">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-file-alt me-2"></i>Đợt phát hành điểm
-                        </h5>
-                        <h2 class="display-4">{{ total_blocks }}</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-graduation-cap me-2"></i>Tổng số điểm
-                        </h5>
-                        <h2 class="display-4">{{ total_transactions }}</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-clock me-2"></i>Điểm chờ duyệt
-                        </h5>
-                        <h2 class="display-4">{{ pending_transactions.count }}</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-shield-alt me-2"></i>Tính toàn vẹn
-                        </h5>
-                        <div class="d-flex align-items-center" style="height: 74px;">
-                            <a href="{% url 'verify_chain' %}" class="btn btn-light w-100">
-                                <i class="fas fa-check-double me-2"></i>Kiểm tra toàn vẹn
+<!-- Welcome Panel -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card welcome-card">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-3 gradient-text"><i class="fas fa-graduation-cap me-2"></i>Hệ thống Quản lý Điểm Số</h2>
+                        <p class="lead mb-3">Chào mừng bạn đến với hệ thống quản lý điểm số. Hệ thống sử dụng công nghệ blockchain để đảm bảo tính minh bạch và toàn vẹn của dữ liệu điểm số sinh viên.</p>
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="{% url 'transaction_list' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-tasks me-2"></i>Duyệt điểm
+                            </a>
+                            <a href="{% url 'mine_block' %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-stamp me-2"></i>Xác nhận điểm
+                            </a>
+                            <a href="{% url 'blockchain_history' %}" class="btn btn-info btn-lg">
+                                <i class="fas fa-link me-2"></i>Xem Blockchain
                             </a>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabs Navigation -->
-    <div class="col-md-12 mb-4">
-        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="blockchain-tab" data-bs-toggle="tab" data-bs-target="#blockchain" type="button" role="tab">
-                    <i class="fas fa-history me-2"></i>Lịch sử phát hành điểm
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">
-                    <i class="fas fa-chart-bar me-2"></i>Thống kê
-                </button>
-            </li>
-        </ul>
-    </div>
-
-    <!-- Tab Content -->
-    <div class="tab-content" id="mainTabsContent">
-        <!-- Blockchain Tab -->
-        <div class="tab-pane fade show active" id="blockchain" role="tabpanel">
-            <div class="row">
-                <!-- Blockchain -->
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-file-alt me-2"></i>Lịch sử phát hành điểm
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            {% if blocks %}
-                                <div class="blockchain-container">
-                                    {% for block in blocks %}
-                                        <div class="card mb-3">
-                                            <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <h5 class="card-title mb-0">Block #{{ block.index }}</h5>
-                                                    <small class="text-muted">{{ block.timestamp|date:"d/m/Y H:i:s" }}</small>
-                                                </div>
-                                                <hr>
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <p class="mb-1"><strong>Hash:</strong></p>
-                                                        <p class="text-muted" style="word-break: break-all;">{{ block.hash }}</p>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <p class="mb-1"><strong>Previous Hash:</strong></p>
-                                                        <p class="text-muted" style="word-break: break-all;">{{ block.previous_hash }}</p>
-                                                    </div>
-                                                </div>
-                                                <div class="mt-3">
-                                                    <p class="mb-1"><strong>Transactions:</strong> {{ block.transactions.count }}</p>
-                                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#blockModal{{ block.index }}">
-                                                        <i class="fas fa-info-circle me-1"></i>Chi tiết
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Block Detail Modal -->
-                                        <div class="modal fade" id="blockModal{{ block.index }}" tabindex="-1" aria-labelledby="blockModalLabel{{ block.index }}" aria-hidden="true">
-                                            <div class="modal-dialog modal-xl">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-primary text-white">
-                                                        <h5 class="modal-title" id="blockModalLabel{{ block.index }}">
-                                                            <i class="fas fa-file-alt me-2"></i>Chi tiết Block #{{ block.index }}
-                                                        </h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="row">
-                                                            <!-- Basic Info -->
-                                                            <div class="col-md-6">
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Index:</strong></p>
-                                                                    <p class="text-muted">{{ block.index }}</p>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Timestamp:</strong></p>
-                                                                    <p class="text-muted">{{ block.timestamp|date:'d/m/Y H:i:s' }}</p>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Nonce:</strong></p>
-                                                                    <p class="text-muted">{{ block.nonce }}</p>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Difficulty:</strong></p>
-                                                                    <p class="text-muted">{{ block.difficulty }}</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Hash Info -->
-                                                            <div class="col-md-6">
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Hash:</strong></p>
-                                                                    <p class="text-muted" style="word-break: break-all;">{{ block.hash }}</p>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Previous Hash:</strong></p>
-                                                                    <p class="text-muted" style="word-break: break-all;">{{ block.previous_hash }}</p>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <p class="mb-1"><strong>Merkle Root:</strong></p>
-                                                                    <p class="text-muted" style="word-break: break-all;">{{ block.merkle_root }}</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Transactions -->
-                                                            <div class="col-md-12 mt-4">
-                                                                <h5 class="mb-3">
-                                                                    <i class="fas fa-graduation-cap me-2"></i>Giao dịch trong Block
-                                                                </h5>
-                                                                {% if block.transactions.all %}
-                                                                    <div class="table-responsive">
-                                                                        <table class="table table-hover">
-                                                                            <thead class="table-light">
-                                                                                <tr>
-                                                                                    <th>ID</th>
-                                                                                    <th>Sinh viên</th>
-                                                                                    <th>Môn học</th>
-                                                                                    <th>Điểm</th>
-                                                                                    <th>Thời gian</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {% for tx in block.transactions.all %}
-                                                                                    <tr>
-                                                                                        <td>
-                                                                                            <small class="text-muted font-monospace">{{ tx.transaction_id }}</small>
-                                                                                        </td>
-                                                                                        <td>
-                                                                                            <span class="fw-bold">{{ tx.student.student_id }}</span>
-                                                                                            <br>
-                                                                                            <small class="text-muted">{{ tx.student.name }}</small>
-                                                                                        </td>
-                                                                                        <td>
-                                                                                            <span class="fw-bold">{{ tx.course.code }}</span>
-                                                                                            <br>
-                                                                                            <small class="text-muted">{{ tx.course.name }}</small>
-                                                                                        </td>
-                                                                                        <td>
-                                                                                            <span class="badge {% if tx.score >= 8 %}bg-success{% elif tx.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
-                                                                                                {{ tx.score }}
-                                                                                            </span>
-                                                                                        </td>
-                                                                                        <td>{{ tx.timestamp|date:"d/m/Y H:i:s" }}</td>
-                                                                                    </tr>
-                                                                                {% endfor %}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-                                                                {% else %}
-                                                                    <div class="text-center py-4">
-                                                                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
-                                                                        <p class="text-muted">Không có giao dịch nào trong block này.</p>
-                                                                    </div>
-                                                                {% endif %}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="text-center">Chưa có block nào trong blockchain.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pending Transactions -->
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-clock me-2"></i>Điểm chờ duyệt
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            {% if pending_transactions %}
-                                <div class="list-group">
-                                    {% for transaction in pending_transactions %}
-                                        <div class="list-group-item">
-                                            <div class="d-flex w-100 justify-content-between">
-                                                <h6 class="mb-1">{{ transaction.student.student_id }}</h6>
-                                                <small class="text-muted">{{ transaction.timestamp|date:"H:i:s" }}</small>
-                                            </div>
-                                            <p class="mb-1">{{ transaction.course.name }}: {{ transaction.score }}</p>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                <div class="mt-3">
-                                    <a href="{% url 'transaction_list' %}" class="btn btn-primary">
-                                        <i class="fas fa-check-circle me-1"></i>Duyệt điểm
-                                    </a>
-                                </div>
-                            {% else %}
-                                <p class="text-center">Không có giao dịch chờ xử lý.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics Tab -->
-        <div class="tab-pane fade" id="statistics" role="tabpanel">
-            <div class="row">
-                <!-- Điểm trung bình -->
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-chart-line me-2"></i>Điểm trung bình
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="text-center">
-                                <h1 class="display-1">{{ average_score|floatformat:2 }}</h1>
-                                <p class="text-muted">Điểm trung bình toàn bộ giao dịch</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Latest Blocks -->
-                <div class="col-md-12 mt-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-history me-2"></i>Đợt phát hành điểm gần đây 
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Index</th>
-                                            <th>Hash</th>
-                                            <th>Transactions</th>
-                                            <th>Difficulty</th>
-                                            <th>Time</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for block in latest_blocks %}
-                                            <tr>
-                                                <td>{{ block.index }}</td>
-                                                <td><code>{{ block.hash|truncatechars:20 }}</code></td>
-                                                <td>{{ block.transactions.count }}</td>
-                                                <td>{{ block.difficulty }}</td>
-                                                <td>{{ block.timestamp|date:"d/m/Y H:i:s" }}</td>
-                                                <td>
-                                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#blockModal{{ block.index }}">
-                                                        <i class="fas fa-info-circle"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <div class="col-md-4 d-none d-md-block text-center">
+                        <img src="https://img.icons8.com/clouds/200/000000/graduation-cap.png" alt="Education" class="img-fluid" style="max-height: 180px;">
                     </div>
                 </div>
             </div>
@@ -328,6 +33,343 @@
     </div>
 </div>
 
-{% block extra_js %}
+<!-- Statistics Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <div class="stat-icon-bg blue-bg">
+                <i class="fas fa-cubes fa-2x"></i>
+            </div>
+            <h3 class="mt-3">{{ total_blocks }}</h3>
+            <p class="text-muted mb-0">Đợt phát hành điểm</p>
+            <a href="{% url 'blockchain_history' %}" class="stretched-link"></a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <div class="stat-icon-bg green-bg">
+                <i class="fas fa-file-alt fa-2x"></i>
+            </div>
+            <h3 class="mt-3">{{ total_transactions }}</h3>
+            <p class="text-muted mb-0">Tổng số điểm</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <div class="stat-icon-bg orange-bg">
+                <i class="fas fa-clock fa-2x"></i>
+            </div>
+            <h3 class="mt-3">{{ pending_transactions.count }}</h3>
+            <p class="text-muted mb-0">Điểm chờ duyệt</p>
+            <a href="{% url 'transaction_list' %}" class="stretched-link"></a>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card text-center">
+            <div class="stat-icon-bg purple-bg">
+                <i class="fas fa-chart-line fa-2x"></i>
+            </div>
+            <h3 class="mt-3">{{ average_score|floatformat:2 }}</h3>
+            <p class="text-muted mb-0">Điểm trung bình</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row">
+    <!-- System Status & Overview -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Tổng quan hệ thống</h5>
+                <a href="{% url 'verify_chain' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-shield-alt me-1"></i>Kiểm tra toàn vẹn
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Status Indicators -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="status-card">
+                            <div class="d-flex align-items-center">
+                                <div class="status-icon {% if pending_transactions.count > 0 %}status-warning{% else %}status-success{% endif %} me-3">
+                                    <i class="fas {% if pending_transactions.count > 0 %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Trạng thái duyệt điểm</h6>
+                                    <p class="mb-0 small">
+                                        {% if pending_transactions.count > 0 %}
+                                            Có {{ pending_transactions.count }} điểm đang chờ duyệt
+                                        {% else %}
+                                            Tất cả điểm đã được duyệt
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="status-card">
+                            <div class="d-flex align-items-center">
+                                <div class="status-icon {% if approved_transactions.count > 0 %}status-warning{% else %}status-success{% endif %} me-3">
+                                    <i class="fas {% if approved_transactions.count > 0 %}fa-clock{% else %}fa-check-circle{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Trạng thái xác nhận</h6>
+                                    <p class="mb-0 small">
+                                        {% if approved_transactions.count > 0 %}
+                                            Có {{ approved_transactions.count }} điểm chờ xác nhận
+                                        {% else %}
+                                            Tất cả điểm đã được xác nhận
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Blocks -->
+                <h6 class="mb-3"><i class="fas fa-history me-2"></i>Các đợt phát hành gần đây</h6>
+                {% if latest_blocks %}
+                <div class="table-responsive recent-blocks-table">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Đợt</th>
+                                <th>Thời gian</th>
+                                <th>Số điểm</th>
+                                <th>Mã Hash</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for block in latest_blocks %}
+                            <tr>
+                                <td><span class="badge bg-primary">#{{ block.index }}</span></td>
+                                <td>{{ block.timestamp|date:"d/m/Y H:i" }}</td>
+                                <td>{{ block.transactions.count }}</td>
+                                <td><code class="small hash-code">{{ block.hash|truncatechars:15 }}</code></td>
+                                <td>
+                                    <a href="{% url 'blockchain_history' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Chưa có đợt phát hành điểm nào.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Pending & Approved Transactions -->
+    <div class="col-md-4">
+        <!-- Pending Transactions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-hourglass-half me-2"></i>Điểm chờ duyệt
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pending_transactions %}
+                    <div class="transactions-list">
+                        {% for transaction in pending_transactions|slice:":5" %}
+                            <div class="transaction-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="badge bg-light text-dark mb-1">{{ transaction.student.student_id }}</span>
+                                        <h6 class="mb-0">{{ transaction.student.name }}</h6>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge score-badge {% if transaction.score >= 8 %}bg-success{% elif transaction.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ transaction.score }}
+                                        </span>
+                                        <div class="small text-muted">{{ transaction.course.name }}</div>
+                                    </div>
+                                </div>
+                                <div class="transaction-meta mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i> {{ transaction.timestamp|date:"d/m/Y H:i" }}
+                                    </small>
+                                    {% if transaction.created_by %}
+                                    <small class="text-muted ms-2">
+                                        <i class="fas fa-user me-1"></i> {{ transaction.created_by.username }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        {% if pending_transactions.count > 5 %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-outline-primary">Xem thêm {{ pending_transactions.count|add:"-5" }} điểm khác</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-primary">
+                            <i class="fas fa-check-circle me-1"></i>Duyệt điểm
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 my-3">
+                        <img src="https://img.icons8.com/cotton/64/000000/checkmark--v1.png" alt="Không có điểm chờ duyệt">
+                        <p class="mt-3 text-muted">Không có điểm nào đang chờ duyệt</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Approved Transactions waiting to be mined -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-check me-2"></i>Chờ xác nhận
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if approved_transactions %}
+                    <div class="alert alert-success">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading mb-1">Điểm đã duyệt đang chờ xác nhận</h6>
+                                <p class="mb-0">Có {{ approved_transactions.count }} điểm đã duyệt đang chờ xác nhận chính thức để đưa vào blockchain.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{% url 'mine_block' %}" class="btn btn-success">
+                            <i class="fas fa-stamp me-2"></i>Xác nhận chính thức
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 my-3">
+                        <img src="https://img.icons8.com/cotton/64/000000/blockchain-technology.png" alt="Không có điểm chờ xác nhận">
+                        <p class="mt-3 text-muted">Không có điểm nào đang chờ xác nhận</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
-{% endblock %} 
+
+{% block extra_js %}
+<style>
+    /* Welcome Card */
+    .welcome-card {
+        border-radius: 15px;
+        background: linear-gradient(to right, rgba(255,255,255,0.9), rgba(255,255,255,0.8)), 
+                    url('https://img.freepik.com/free-vector/abstract-education-background-with-books_23-2149486556.jpg?w=2000');
+        background-size: cover;
+        background-position: center;
+        border: none;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
+    
+    .gradient-text {
+        background: linear-gradient(45deg, #1a237e, #4a148c);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-weight: 700;
+    }
+    
+    /* Statistic Cards */
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        transition: all 0.3s;
+        position: relative;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon-bg {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        color: white;
+    }
+    
+    .blue-bg { background: linear-gradient(135deg, #1a237e, #283593); }
+    .green-bg { background: linear-gradient(135deg, #1b5e20, #388e3c); }
+    .orange-bg { background: linear-gradient(135deg, #e65100, #f57c00); }
+    .purple-bg { background: linear-gradient(135deg, #4a148c, #7b1fa2); }
+    
+    /* Status Cards */
+    .status-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+    }
+    
+    .status-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+    
+    .status-success { background: linear-gradient(135deg, #2e7d32, #4caf50); }
+    .status-warning { background: linear-gradient(135deg, #ff8f00, #ffc107); }
+    .status-danger { background: linear-gradient(135deg, #c62828, #f44336); }
+    
+    /* Transactions list */
+    .transactions-list {
+        max-height: 350px;
+        overflow-y: auto;
+    }
+    
+    .transaction-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .transaction-item:last-child {
+        border-bottom: none;
+    }
+    
+    .score-badge {
+        font-size: 1.1rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+    }
+    
+    .hash-code {
+        background: #f5f5f5;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+    }
+    
+    .recent-blocks-table th, .recent-blocks-table td {
+        padding: 0.75rem;
+    }
+</style>
+{% endblock %}

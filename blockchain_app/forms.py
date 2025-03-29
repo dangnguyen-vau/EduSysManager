@@ -55,14 +55,28 @@ class TransactionForm(forms.ModelForm):
             'score': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'min': '0', 'max': '10'}),
         }
 
-class TransactionApprovalForm(forms.ModelForm):
-    class Meta:
-        model = Transaction
-        fields = ['status', 'rejection_reason']
-        widgets = {
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'rejection_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
+class TransactionApprovalForm(forms.Form):  # Thay đổi từ ModelForm thành Form thông thường
+    STATUS_CHOICES = Transaction.STATUS_CHOICES  # Sử dụng các lựa chọn từ model Transaction
+    
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'aria-describedby': 'statusHelpBlock'
+        })
+    )
+    
+    rejection_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+    )
+    
+    # Thêm trường để nhập khóa riêng tư (không lưu vào database)
+    private_key = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Nhập khóa riêng tư để ký'}),
+        required=True,
+        help_text='Khóa riêng tư của bạn để ký xác nhận giao dịch'
+    )
 
 class MiningForm(forms.Form):
     difficulty = forms.IntegerField(
@@ -70,4 +84,4 @@ class MiningForm(forms.Form):
         max_value=6,
         initial=4,
         widget=forms.NumberInput(attrs={'class': 'form-control'})
-    ) 
+    )

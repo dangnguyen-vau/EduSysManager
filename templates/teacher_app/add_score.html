@@ -35,6 +35,15 @@
                         <div class="col-md-12 mt-3">
                             {{ form.score|as_crispy_field }}
                         </div>
+                        
+                        <!-- Thêm trường khóa riêng tư -->
+                        <div class="col-md-12 mt-3">
+                            {{ form.private_key|as_crispy_field }}
+                            <div class="form-text mb-3">
+                                <i class="fas fa-info-circle me-1"></i> Khóa này chỉ được sử dụng để ký giao dịch và không được lưu trữ.
+                                <a href="{% url 'teacher_manage_keys' %}" target="_blank">Quản lý khóa của bạn</a>
+                            </div>
+                        </div>
                     </div>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">
@@ -107,4 +116,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

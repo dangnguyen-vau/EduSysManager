@@ -1,0 +1,114 @@
+{% extends 'blockchain_app/base.html' %}
+
+{% block title %}Quản lý khóa Blockchain - Phòng Đào Tạo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Quản lý khóa</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-key me-2"></i>Quản lý khóa bảo mật Blockchain
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if key_generated %}
+                <div class="alert alert-success">
+                    <h5 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Khóa mới đã được tạo thành công!</h5>
+                    <p>Khóa riêng tư của bạn chỉ được hiển thị một lần. Vui lòng sao chép và lưu trữ ở nơi an toàn.</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Khóa riêng tư của bạn (Private Key)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ private_key }}" id="privateKeyInput" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('privateKeyInput')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="form-text text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>QUAN TRỌNG:</strong> Đây là lần duy nhất khóa riêng tư được hiển thị. Hãy lưu trữ nó ở nơi an toàn.
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Khóa công khai của bạn (Public Key)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ public_key|default:'Bạn chưa có khóa công khai' }}" id="publicKeyInput" readonly>
+                        {% if public_key %}
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('publicKeyInput')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="form-text">
+                        Khóa công khai được sử dụng để xác minh chữ ký của bạn trên blockchain.
+                    </div>
+                </div>
+
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>Thông tin về khóa bảo mật</h5>
+                        <ul class="mb-0">
+                            <li>Khóa riêng tư (Private Key) dùng để ký các giao dịch, giữ bí mật và không được chia sẻ</li>
+                            <li>Khóa công khai (Public Key) dùng để xác minh chữ ký, được lưu trên hệ thống</li>
+                            <li>Mỗi khi tạo cặp khóa mới, cặp khóa cũ sẽ không còn hiệu lực</li>
+                            <li>Khóa riêng tư không được lưu trên hệ thống vì lý do bảo mật</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                        </a>
+                        <button type="submit" name="generate_keys" class="btn btn-primary">
+                            {% if has_keys %}
+                            <i class="fas fa-sync-alt me-2"></i>Tạo cặp khóa mới
+                            {% else %}
+                            <i class="fas fa-key me-2"></i>Tạo cặp khóa
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyToClipboard(elementId) {
+        var copyText = document.getElementById(elementId);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); /* For mobile devices */
+        document.execCommand("copy");
+        
+        // Hiển thị thông báo
+        var alertDiv = document.createElement("div");
+        alertDiv.className = "alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3";
+        alertDiv.innerHTML = "<i class='fas fa-check-circle me-2'></i>Đã sao chép vào clipboard!";
+        alertDiv.style.zIndex = "9999";
+        document.body.appendChild(alertDiv);
+        
+        // Tự động ẩn sau 2 giây
+        setTimeout(function() {
+            alertDiv.remove();
+        }, 2000);
+    }
+</script>
+{% endblock %}

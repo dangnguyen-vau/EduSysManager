@@ -89,6 +89,10 @@ class Transaction(models.Model):
     # Thêm trường deadline - mặc định là 3 ngày sau khi tạo
     deadline = models.DateTimeField(null=True, blank=True)
     
+    # Thêm các trường liên quan đến chữ ký số
+    creator_signature = models.CharField(max_length=512, blank=True, null=True)
+    approver_signature = models.CharField(max_length=512, blank=True, null=True)
+    
     def save(self, *args, **kwargs):
         # Nếu là lần đầu tạo, thiết lập deadline
         if not self.pk and not self.deadline:
@@ -98,6 +102,75 @@ class Transaction(models.Model):
     def is_expired(self):
         """Kiểm tra xem giao dịch đã quá hạn chưa"""
         return timezone.now() > self.deadline if self.deadline else False
+
+    def sign_transaction(self, private_key, role='creator', user=None):
+        """
+        Ký giao dịch bằng khóa riêng tư
+        role: 'creator' hoặc 'approver'
+        user: user cụ thể để ký (nếu không phải created_by hoặc approved_by)
+        """
+        # Tạo một chuỗi dữ liệu từ thông tin giao dịch
+        transaction_data = f"{self.transaction_id}{self.student.student_id}{self.course.code}{self.score}"
+        
+        # Lấy người dùng dựa trên vai trò hoặc được truyền vào trực tiếp
+        signing_user = user  # Ưu tiên user được truyền vào
+        
+        if not signing_user:
+            if role == 'creator':
+                signing_user = self.created_by
+            elif role == 'approver' and hasattr(self, 'approved_by') and self.approved_by:
+                signing_user = self.approved_by
+        
+        # Kiểm tra người dùng có tồn tại và có public key không - cung cấp thông tin chi tiết hơn
+        if not signing_user:
+            raise ValueError("Không tìm thấy người dùng hợp lệ để ký giao dịch")
+        
+        if not signing_user.public_key:
+            raise ValueError(f"Người dùng {signing_user.username} chưa thiết lập khóa công khai. Vui lòng thiết lập khóa trước.")
+        
+        # Tạo public key từ private key
+        generated_public_key = hashlib.sha256(private_key.encode()).hexdigest()
+        
+        # Xác minh khớp với public key đã lưu
+        if generated_public_key != signing_user.public_key:
+            raise ValueError("Khóa riêng tư không hợp lệ! Không khớp với khóa công khai của bạn.")
+        
+        # Tạo một "message" bằng cách kết hợp private_key và dữ liệu giao dịch
+        message = hashlib.sha256(f"{private_key}{transaction_data}".encode()).hexdigest()
+        
+        # Tạo chữ ký
+        signature = hashlib.sha256(f"{message}{private_key}".encode()).hexdigest()
+        
+        # Lưu chữ ký vào trường thích hợp
+        if role == 'creator':
+            self.creator_signature = signature
+        elif role == 'approver':
+            self.approver_signature = signature
+        
+        self.save()
+        return signature
+    
+    def verify_signature(self, public_key, role='creator'):
+        """
+        Xác minh chữ ký bằng khóa công khai
+        role: 'creator' hoặc 'approver'
+        """
+        # Lấy chữ ký cần xác minh
+        signature = self.creator_signature if role == 'creator' else self.approver_signature
+        
+        if not signature:
+            return False
+        
+        # Tạo lại dữ liệu giao dịch
+        transaction_data = f"{self.transaction_id}{self.student.student_id}{self.course.code}{self.score}"
+        
+        # Trong hệ thống thực tế, đây là nơi xác minh chữ ký bằng khóa công khai
+        # Sử dụng transaction_data trong quá trình xác minh
+        expected_message = hashlib.sha256(f"{public_key}{transaction_data}".encode()).hexdigest()
+        expected_signature = hashlib.sha256(f"{expected_message}{public_key}".encode()).hexdigest()
+        
+        # So sánh chữ ký được cung cấp với chữ ký được tính toán
+        return signature == expected_signature
 
     def __str__(self):
         return f"{self.student.student_id} - {self.course.code} - {self.score} ({self.get_status_display()})"

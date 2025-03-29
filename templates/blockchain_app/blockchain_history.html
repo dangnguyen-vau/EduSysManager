@@ -1,0 +1,242 @@
+{% extends 'blockchain_app/base.html' %}
+
+{% block title %}Lịch sử Blockchain - Phòng Đào Tạo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Blockchain</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-link me-2"></i>Lịch sử phát hành điểm (Blockchain)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex mb-4 justify-content-between align-items-center">
+                    <span class="badge bg-primary">Tổng số khối: {{ blocks.count }}</span>
+                    <a href="{% url 'verify_chain' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-check-double me-2"></i>Kiểm tra toàn vẹn blockchain
+                    </a>
+                </div>
+                
+                {% if blocks %}
+                    <div class="blockchain-container">
+                        <div class="blockchain-flow">
+                            {% for block in blocks %}
+                                <div class="blockchain-block" data-bs-toggle="modal" data-bs-target="#blockModal{{ block.index }}">
+                                    <div class="block-header">Block #{{ block.index }}</div>
+                                    <div class="block-hash">{{ block.hash|truncatechars:15 }}...</div>
+                                    <div class="block-info">
+                                        <i class="fas fa-calendar-alt me-1"></i> {{ block.timestamp|date:"d/m/Y" }}<br>
+                                        <i class="fas fa-file-alt me-1"></i> {{ block.transactions.count }} điểm
+                                    </div>
+                                </div>
+                                {% if not forloop.last %}
+                                    <div class="blockchain-arrow">
+                                        <i class="fas fa-long-arrow-alt-right"></i>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Block Detail Modals -->
+                    {% for block in blocks %}
+                        <div class="modal fade" id="blockModal{{ block.index }}" tabindex="-1" aria-labelledby="blockModalLabel{{ block.index }}" aria-hidden="true">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title" id="blockModalLabel{{ block.index }}">
+                                            <i class="fas fa-cubes me-2"></i>Chi tiết Block #{{ block.index }}
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <!-- Basic Info -->
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Index:</strong></p>
+                                                    <p class="text-muted">{{ block.index }}</p>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Timestamp:</strong></p>
+                                                    <p class="text-muted">{{ block.timestamp|date:'d/m/Y H:i:s' }}</p>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Nonce:</strong></p>
+                                                    <p class="text-muted">{{ block.nonce }}</p>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Difficulty:</strong></p>
+                                                    <p class="text-muted">{{ block.difficulty }}</p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Hash Info -->
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Hash:</strong></p>
+                                                    <p class="text-muted" style="word-break: break-all;">{{ block.hash }}</p>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Previous Hash:</strong></p>
+                                                    <p class="text-muted" style="word-break: break-all;">{{ block.previous_hash }}</p>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <p class="mb-1"><strong>Merkle Root:</strong></p>
+                                                    <p class="text-muted" style="word-break: break-all;">{{ block.merkle_root }}</p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Transactions -->
+                                            <div class="col-md-12 mt-4">
+                                                <h5 class="mb-3">
+                                                    <i class="fas fa-graduation-cap me-2"></i>Điểm số trong Block
+                                                </h5>
+                                                {% if block.transactions.all %}
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th>ID</th>
+                                                                    <th>Sinh viên</th>
+                                                                    <th>Môn học</th>
+                                                                    <th>Điểm</th>
+                                                                    <th>Thời gian</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for tx in block.transactions.all %}
+                                                                    <tr>
+                                                                        <td>
+                                                                            <small class="text-muted font-monospace">{{ tx.transaction_id }}</small>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="fw-bold">{{ tx.student.student_id }}</span>
+                                                                            <br>
+                                                                            <small class="text-muted">{{ tx.student.name }}</small>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="fw-bold">{{ tx.course.code }}</span>
+                                                                            <br>
+                                                                            <small class="text-muted">{{ tx.course.name }}</small>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="badge {% if tx.score >= 8 %}bg-success{% elif tx.score >= 6.5 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                                                {{ tx.score }}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td>{{ tx.timestamp|date:"d/m/Y H:i:s" }}</td>
+                                                                    </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="text-center py-4">
+                                                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                                                        <p class="text-muted">Không có điểm nào trong block này.</p>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-cubes fa-4x text-muted mb-3"></i>
+                        <p class="lead text-muted">Chưa có block nào trong blockchain.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .blockchain-container {
+        overflow-x: auto;
+        padding: 20px 0;
+    }
+    
+    .blockchain-flow {
+        display: flex;
+        align-items: center;
+        min-width: max-content;
+        padding: 0 20px;
+    }
+    
+    .blockchain-block {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 15px;
+        min-width: 220px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+    }
+    
+    .blockchain-block:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+    
+    .blockchain-block::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .block-header {
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 8px;
+    }
+    
+    .block-hash {
+        font-family: monospace;
+        background: rgba(0,0,0,0.2);
+        padding: 5px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .block-info {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .blockchain-arrow {
+        margin: 0 15px;
+        color: #1a237e;
+        font-size: 1.5rem;
+        min-width: 30px;
+        text-align: center;
+    }
+</style>
+{% endblock %}

@@ -15,9 +15,13 @@ urlpatterns = [
     path('transactions/add/', views.add_transaction, name='add_transaction'),
     path('mine/', views.mine_block, name='mine_block'),
     path('verify/', views.verify_chain, name='verify_chain'),
+    path('blockchain/', views.blockchain_history, name='blockchain_history'),  # Đường dẫn mới
     path('students/', views.student_list, name='student_list'),
     path('students/add/', views.add_student, name='add_student'),
     path('courses/', views.course_list, name='course_list'),
     path('courses/add/', views.add_course, name='add_course'),
     path('statistics/', views.statistics, name='statistics'),
-] 
+    
+    # Thêm route cho quản lý khóa
+    path('keys/', views.manage_keys, name='manage_keys'),
+]

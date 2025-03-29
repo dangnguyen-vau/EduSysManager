@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 
 from blockchain_app.models import Transaction, Student, Course
-from blockchain_app.forms import TransactionForm
+from teacher_app.forms import TeacherTransactionForm  # Chỉ giữ import của TeacherTransactionForm
 
 # Thêm imports cho login
 from django.contrib.auth import login, logout
@@ -92,14 +92,37 @@ def add_score(request):
             pass
     
     if request.method == 'POST':
-        form = TransactionForm(request.POST)
+        form = TeacherTransactionForm(request.POST)
         if form.is_valid():
+            # Lấy private_key từ form nhưng không lưu vào database
+            private_key = form.cleaned_data.pop('private_key')
+            
             # Lưu form nhưng chưa commit để thêm thông tin người tạo
             transaction = form.save(commit=False)
             transaction.created_by = request.user
+            
+            # Kiểm tra xem người dùng có khóa công khai không
+            if not request.user.public_key:
+                messages.error(request, "Bạn chưa thiết lập cặp khóa. Vui lòng thiết lập khóa trước khi nhập điểm.")
+                return redirect('teacher_manage_keys')
+            
+            # Lưu transaction trước khi ký
             transaction.save()
             
-            messages.success(request, f"Đã nhập điểm {transaction.score} cho sinh viên {transaction.student.name}, môn {transaction.course.name}!")
+            # Ký giao dịch bằng private_key của giảng viên
+            try:
+                transaction.sign_transaction(private_key, 'creator', user=request.user)
+                messages.success(request, f"Đã nhập và ký điểm {transaction.score} cho sinh viên {transaction.student.name}, môn {transaction.course.name}!")
+            except ValueError as e:
+                # Xóa giao dịch nếu không thể ký
+                transaction.delete()
+                messages.error(request, f"Lỗi khi ký số: {str(e)}")
+                return redirect('add_score')
+            except Exception as e:
+                # Xóa giao dịch nếu có lỗi khác
+                transaction.delete()
+                messages.error(request, f"Lỗi không xác định: {str(e)}")
+                return redirect('add_score')
             
             # Chuyển hướng về trang thêm điểm mới nếu người dùng muốn nhập điểm khác
             if 'submit_add_another' in request.POST:
@@ -108,7 +131,7 @@ def add_score(request):
             # Mặc định chuyển hướng về trang chủ
             return redirect('teacher_home')
     else:
-        form = TransactionForm(initial=initial_data)
+        form = TeacherTransactionForm(initial=initial_data)
     
     # Lấy điểm đang chờ duyệt gần đây
     recent_pending_scores = Transaction.objects.filter(
@@ -310,3 +333,25 @@ def api_course_scores(request, course_id):
         'distribution': distribution,
         'scores': scores_data
     })
+
+@login_required
+@user_passes_test(is_teacher_or_admin, login_url='login')
+def manage_keys(request):
+    """Trang quản lý khóa của giảng viên"""
+    if request.method == 'POST' and 'generate_keys' in request.POST:
+        # Tạo cặp khóa mới
+        private_key = request.user.generate_keypair()
+        
+        # Hiển thị khóa riêng tư cho người dùng để lưu (chỉ hiển thị một lần)
+        context = {
+            'private_key': private_key,
+            'public_key': request.user.public_key,
+            'key_generated': True
+        }
+        return render(request, 'teacher_app/manage_keys.html', context)
+    
+    context = {
+        'public_key': request.user.public_key,
+        'has_keys': bool(request.user.public_key)
+    }
+    return render(request, 'teacher_app/manage_keys.html', context)
